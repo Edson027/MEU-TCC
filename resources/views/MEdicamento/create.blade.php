@@ -55,12 +55,7 @@
                         @error('minimum_stock') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
-                    <div>
-                        <label for="price" class="block text-sm font-medium text-gray-700">Preço (R$)</label>
-                        <input type="number" step="0.01" name="price" id="price" value="{{ old('price') }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        @error('price') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
+                 
                 </div>
 
                 <div class="mt-6">
@@ -73,7 +68,7 @@
 
             <div class="px-6 py-4 bg-gray-100 border-t flex justify-end">
                 <button type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md mr-2"
-                        onclick="window.location='{{ route('medicines.index') }}'">
+                        onclick="window.location='{{ route('medicines.index')}}'">
                     Cancelar
                 </button>
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md">

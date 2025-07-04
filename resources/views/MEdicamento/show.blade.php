@@ -26,7 +26,7 @@
                 <p><span class="font-semibold">Nome:</span> {{ $medicine->name }}</p>
                 <p><span class="font-semibold">Lote:</span> {{ $medicine->batch }}</p>
                 <p><span class="font-semibold">Validade:</span> {{ \Carbon\Carbon::parse($medicine->expiration_date)->format('d/m/Y') }}</p>
-                <p><span class="font-semibold">Preço:</span> R$ {{ number_format($medicine->price, 2, ',', '.') }}</p>
+               
             </div>
         </div>
 

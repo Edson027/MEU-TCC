@@ -106,4 +106,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Request::class, 'responded_by');
     }
+
+    public function notifications()
+{
+    return $this->hasMany(Notification::class);
+}
+
+public function unreadNotifications()
+{
+    return $this->notifications()->where('read', false);
+}
 }

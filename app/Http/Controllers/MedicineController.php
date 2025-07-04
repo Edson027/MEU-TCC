@@ -8,6 +8,7 @@ use App\Models\Movement;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use App\Models\Notification;
 class MedicineController extends Controller
 {
 
@@ -65,7 +66,7 @@ class MedicineController extends Controller
                 'required',
              ],
             'expiration_date' => 'required|date|after_or_equal:today',
-            'price' => 'nullable|numeric|min:0',
+         
             'category' => 'required|max:100',
             'minimum_stock' => 'required|integer|min:1'
         ],
@@ -76,6 +77,28 @@ class MedicineController extends Controller
 
 
         ]);
+
+        
+   $medicine = Medicine::create($request->all());
+
+        // Registrar entrada inicial
+        Movement::create([
+            'medicine_id' => $medicine->id,
+            'user_id' => auth()->id(),
+            'type' => 'entrada',
+            'quantity' => $request->stock,
+            'reason' => 'Cadastro inicial',
+            'movement_date' => now()
+        ]);
+
+        // Verificar se o estoque está abaixo do mínimo
+        if ($medicine->stock < $medicine->minimum_stock) {
+            $this->checkLowStock();
+        }
+
+        return redirect()->route('medicines.show', $medicine)
+                         ->with('success', 'Medicamento cadastrado com sucesso!');
+        /*
 
         $medicine = Medicine::create($request->all());
 
@@ -90,7 +113,7 @@ class MedicineController extends Controller
         ]);
 
         return redirect()->route('medicines.show', $medicine)
-                         ->with('success', 'Medicamento cadastrado com sucesso!');
+                         ->with('success', 'Medicamento cadastrado com sucesso!');*/
     }
 
     public function show(Medicine $medicine)
@@ -110,46 +133,14 @@ class MedicineController extends Controller
 
     public function update(Request $request, Medicine $medicine)
     {
-/*
-$request->validate([
-    'nome' => 'required|string|max:255|unique:medicamentos,nome,NULL,id,lote,'.$request->lote,
-    'descricao' => 'nullable|string|max:500',
-    'lote' => 'required|string|max:50',
-    'validade' => 'required|date|after_or_equal:today',
-    'quantidade_inicial' => 'required|integer|min:1|max:10000',
-    'preco' => 'required|numeric|min:0.01|max:9999.99',
-], [
-    'validade.after_or_equal' => 'A validade deve ser hoje ou uma data futura.',
-    'nome.unique' => 'Já existe um medicamento com este nome e lote.',
-]);
-
-
-   $request->validate([
-            'name' => 'required|max:255|unique:medicines,name,NULL,id,batch,'.$request->batch,
-            'description' => 'nullable',
-            'batch' => [
-                'required',
-                Rule::unique('medicines')->ignore($medicine->id)
-            ],
-            'expiration_date' => 'required|date|after_or_equal:today',
-            'price' => 'nullable|numeric|min:0',
-            'category' => 'required|max:100',
-            'minimum_stock' => 'required|integer|min:1'
-        ],
-        [
-            'expiration_date.agora_ou_depois'=>'Avalidade deve ser de hoje ou de uma data futura!',
-           'name.unique'=>'já existe um medicamento com este nome e lote!',
-
-        ]
-
-  */      $request->validate([
+    $request->validate([
             'name' => 'required|max:255|unique:medicines,name,NULL,id,batch,'.$request->batch,
             'description' => 'nullable',
             'batch' => [
                 'required',
              ],
             'expiration_date' => 'required|date|after_or_equal:today',
-            'price' => 'nullable|numeric|min:0',
+         
             'category' => 'required|max:100',
             'minimum_stock' => 'required|integer|min:1'
         ],
@@ -162,11 +153,22 @@ $request->validate([
 
     );
 
-        $medicine->update($request->all());
+       $medicine->update($request->all());
+
+        // Verificar se o estoque está abaixo do mínimo
+        if ($medicine->stock < $medicine->minimum_stock) {
+            $this->checkLowStock();
+        }
 
         return redirect()->route('medicines.show', $medicine)
                          ->with('success', 'Medicamento atualizado com sucesso!');
     }
+/*
+        $medicine->update($request->all());
+
+        return redirect()->route('medicines.show', $medicine)
+                         ->with('success', 'Medicamento atualizado com sucesso!');
+    }*/
 
     public function destroy(Medicine $medicine)
     {
@@ -212,220 +214,105 @@ $request->validate([
         return back()->with('success', 'Estoque reabastecido com sucesso!');
     }
 
-
-
-
-
-
-
-    /*
-    public function index(Request $request)
+      public function checkStockAndExpiration()
     {
-        $query = Medicine::query();
+        $this->checkLowStock();
+        $this->checkExpiringSoon();
+    }
 
-        // Filtros
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%'.$request->search.'%')
-                  ->orWhere('batch', 'like', '%'.$request->search.'%');
+      protected function checkLowStock()
+    {
+        $medicines = Medicine::whereColumn('stock', '<', 'minimum_stock')->get();
+        
+        foreach ($medicines as $medicine) {
+            $message = "O medicamento {$medicine->name} (Lote: {$medicine->batch}) está com estoque baixo. Quantidade atual: {$medicine->stock}, Mínimo: {$medicine->minimum_stock}";
+            
+            // Notificar administradores
+            $admins = User::where('is_admin', true)->get();
+            foreach ($admins as $admin) {
+                $this->createNotification($admin->id, $medicine->id, 'stock', $message);
+            }
+            
+            // Notificar usuário logado (se houver)
+            if (auth()->check()) {
+                $this->createNotification(auth()->id(), $medicine->id, 'stock', $message);
+            }
         }
+    }
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
+   protected function checkExpiringSoon()
+    {
+        $threshold = now()->addDays(30);
+        $medicines = Medicine::where('expiration_date', '<=', $threshold)->get();
+        
+        foreach ($medicines as $medicine) {
+            $expirationDate = Carbon::parse($medicine->expiration_date)->format('d/m/Y');
+            $message = "O medicamento {$medicine->name} (Lote: {$medicine->batch}) está próximo da data de expiração ({$expirationDate}). Quantidade em estoque: {$medicine->stock}";
+            
+            // Notificar administradores
+            $admins = User::where('is_admin', true)->get();
+            foreach ($admins as $admin) {
+                $this->createNotification($admin->id, $medicine->id, 'expiration', $message);
+            }
+            
+            // Notificar usuário logado (se houver)
+            if (auth()->check()) {
+                $this->createNotification(auth()->id(), $medicine->id, 'expiration', $message);
+            }
         }
+    }
 
-        if ($request->filled('stock_status')) {
-            $query->where('stock', $request->stock_status == 'low' ? '<' : '>=', 10);
+     protected function createNotification($userId, $medicineId, $type, $message)
+    {
+        // Verifica se já existe notificação não lida para evitar duplicatas
+        $exists = Notification::where('user_id', $userId)
+            ->where('medicine_id', $medicineId)
+            ->where('type', $type)
+            ->where('read', false)
+            ->exists();
+            
+        if (!$exists) {
+            Notification::create([
+                'user_id' => $userId,
+                'medicine_id' => $medicineId,
+                'type' => $type,
+                'message' => $message
+            ]);
         }
-
-        if ($request->filled('expiration')) {
-            $days = $request->expiration == 'soon' ? 30 : 90;
-            $query->where('expiration_date', '<=', now()->addDays($days));
-        }
-
-        $medicines = $query->with('movements')
-            ->orderBy('name')
-            ->paginate(15)
-            ->withQueryString();
-
-        $categories = Medicine::distinct('category')->pluck('category');
-
-        return view('medicines.index', compact('medicines', 'categories'));
     }
+    
+//resources\views\Notificar
+public function notifications()
+{
+    $notifications = auth()->user()->notifications()
+        ->with('medicine')
+        ->latest()
+        ->paginate(10);
+ 
+    return view('Notificar.index', compact('notifications'));
+}
 
-    public function create()
-    {
-        return view('medicines.create');
-    }
+public function markAsRead(Notification $notification)
+{
+    $this->authorize('update', $notification);
+    
+    $notification->update(['read' => true]);
+    
+    return back()->with('success', 'Notificação marcada como lida');
+}
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|max:255',
-            'description' => 'nullable',
-            'batch' => 'required|unique:medicines',
-            'expiration_date' => 'required|date',
-            'stock' => 'required|integer|min:0',
-            'price' => 'nullable|numeric|min:0',
-            'category' => 'required|max:100',
-            'minimum_stock' => 'required|integer|min:1'
-        ]);
-
-        $medicine = Medicine::create($request->all());
-
-        // Registrar entrada inicial
-        Movement::create([
-            'medicine_id' => $medicine->id,
-            'user_id' => auth()->id,
-            'type' => 'entrada',
-            'quantity' => $request->stock,
-            'reason' => 'Cadastro inicial',
-            'movement_date' => now()
-        ]);
-
-        return redirect()->route('medicines.show', $medicine)
-                         ->with('success', 'Medicamento cadastrado com sucesso!');
-    }
-
-    public function show(Medicine $medicine)
-    {
-        $movements = $medicine->movements()
-            ->with(['user', 'request'])
-            ->latest()
-            ->paginate(10);
-
-        return view('medicines.show', compact('medicine', 'movements'));
-    }
-
-    public function edit(Medicine $medicine)
-    {
-        return view('medicines.edit', compact('medicine'));
-    }
-
-    public function update(Request $request, Medicine $medicine)
-    {
-        $request->validate([
-            'name' => 'required|max:255',
-            'description' => 'nullable',
-            'batch' => [
-                'required',
-                Rule::unique('medicines')->ignore($medicine->id)
-            ],
-            'expiration_date' => 'required|date',
-            'price' => 'nullable|numeric|min:0',
-            'category' => 'required|max:100',
-            'minimum_stock' => 'required|integer|min:1'
-        ]);
-
-        $medicine->update($request->all());
-
-        return redirect()->route('medicines.show', $medicine)
-                         ->with('success', 'Medicamento atualizado com sucesso!');
-    }
-
-    public function destroy(Medicine $medicine)
-    {
-        $medicine->delete();
-        return redirect()->route('medicines.index')
-                         ->with('success', 'Medicamento excluído com sucesso!');
-    }
-
-    public function history(Medicine $medicine)
-    {
-        $movements = $medicine->movements()
-            ->with(['user', 'request'])
-            ->latest()
-            ->paginate(20);
-
-        $requests = $medicine->requests()
-            ->with(['user', 'responder'])
-            ->latest()
-            ->paginate(20);
-
-        return view('medicines.history', compact('medicine', 'movements', 'requests'));
-    }
-
-    public function restock(Request $request, Medicine $medicine)
-    {
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'required|max:255',
-            'movement_date' => 'required|date'
-        ]);
-
-        $medicine->increment('stock', $request->quantity);
-
-        Movement::create([
-            'medicine_id' => $medicine->id,
-            'user_id' => auth()->id,
-            'type' => 'entrada',
-            'quantity' => $request->quantity,
-            'reason' => $request->reason,
-            'movement_date' => $request->movement_date
-        ]);
-
-        return back()->with('success', 'Estoque reabastecido com sucesso!');
-    }
+public function deleteNotification(Notification $notification)
+{
+    $this->authorize('delete', $notification);
+    
+    $notification->delete();
+    
+    return back()->with('success', 'Notificação removida');
+}
 
 
 
-    /*
-     public function index()
-    {
-        $medicines = Medicine::all();
-        return view('MEdicamento.index', compact('medicines'));
-    }
-    public function create()
-    {
-        return view('MEdicamento.create');
-    }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|max:255',
-            'batch' => 'required',
-            'expiration_date' => 'required|date',
-            'stock' => 'required|integer|min:0',
-            'price' => 'nullable|numeric|min:0'
-        ]);
 
-        Medicine::create($request->all());
-
-        return redirect()->route('medicines.index')
-                         ->with('success', 'Medicamento cadastrado com sucesso!');
-    }
-
-    public function show(Medicine $medicine)
-    {
-        $movements = $medicine->movements()->latest()->paginate(10);
-        return view('MEdicamento.show', compact('medicine', 'movements'));
-    }
-
-    public function edit(Medicine $medicine)
-    {
-        return view('MEdicamento.edit', compact('medicine'));
-    }
-
-    public function update(Request $request, Medicine $medicine)
-    {
-        $request->validate([
-            'name' => 'required|max:255',
-            'batch' => 'required',
-            'expiration_date' => 'required|date',
-            'stock' => 'required|integer|min:0',
-            'price' => 'nullable|numeric|min:0'
-        ]);
-
-        $medicine->update($request->all());
-
-        return redirect()->route('medicines.index')
-                         ->with('success', 'Medicamento atualizado com sucesso!');
-    }
-
-    public function destroy(Medicine $medicine)
-    {
-        $medicine->delete();
-        return redirect()->route('medicines.index')
-                         ->with('success', 'Medicamento excluído com sucesso!');
-    }*/
+  
 }

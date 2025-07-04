@@ -9,8 +9,8 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
-use App\Models\Request as MedicineRequest; // Já está no seu código
-use Illuminate\Http\Request; // Adicione esta linha
+use App\Models\Request as MedicineRequest; 
+use Illuminate\Http\Request; 
 class ReportController extends Controller
 {
   public function index()

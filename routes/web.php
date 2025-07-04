@@ -128,3 +128,6 @@ Route::get('requests/{request}/edit', [RequestController::class, 'edit'])->name(
 Route::put('requests/{request}', [RequestController::class, 'update'])->name('requests.update');
 
     //});
+Route::get('/notifications', [MedicineController::class, 'notifications'])->name('notifications.index');
+Route::put('/notifications/{notification}/read', [MedicineController::class, 'markAsRead'])->name('notifications.read');
+Route::delete('/notifications/{notification}', [MedicineController::class, 'deleteNotification'])->name('notifications.destroy');

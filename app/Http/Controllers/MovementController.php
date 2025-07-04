@@ -31,7 +31,11 @@ class MovementController extends Controller
             ]);
         }
 
-        // Atualizar estoque
+        // Atualizar estoque 
+        /*
+git config --global user.email "seu-email@exemplo.com"
+git config --global user.name "Seu Nome"
+        */
         if ($request->type == 'entrada') {
             $medicine->increment('stock', $request->quantity);
         } else {
