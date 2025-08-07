@@ -22,6 +22,9 @@ return new class extends Migration
     $table->string('category')->nullable();
        $table->integer('minimum_stock')->default(10);
     $table->timestamps();
+      $table->softDeletes();
+       $table->timestamp('last_alerted_at')->nullable();
+          
         });
     }
 

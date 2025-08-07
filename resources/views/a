@@ -1,0 +1,32 @@
+ <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Movimentações de Estoque (Últimos 30 dias)</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" 
+                             aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Opções de Visualização:</div>
+                            <a class="dropdown-item" href="#" onclick="updateChart('30')">Últimos 30 dias</a>
+                            <a class="dropdown-item" href="#" onclick="updateChart('90')">Últimos 90 dias</a>
+                            <a class="dropdown-item" href="#" onclick="updateChart('365')">Últimos 12 meses</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="movementChart"></canvas>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <div class="legend-item d-inline-block mx-2"><span class="legend-color bg-success"></span> Entradas</div>
+                        <div class="legend-item d-inline-block mx-2"><span class="legend-color bg-danger"></span> Saídas</div>
+                    </div>
+                    <div class="mt-2 text-center small text-muted">
+                       total movimentados: {{ $movementData->sum('entradas') - $movementData->sum('saidas') }} unidades <br>
+ total existente:{{$total}}
+                    </div>
+
+                </div>
+            </div>

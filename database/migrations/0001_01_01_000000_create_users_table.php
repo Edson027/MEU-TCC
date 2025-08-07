@@ -17,10 +17,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-             $table->enum('type', UserType::values())
-                  ->default(UserType::TECNICO->value)
-                  ->comment('Tipo de usuário: admin, enfermeiro, medico, gestor');
+            // $table->enum('type', UserType::values())->default(UserType::TECNICO->value)->comment('Tipo de usuário: admin, enfermeiro, medico, gestor');
+            $table->boolean('receives_notifications')->default(true);
+            $table->enum('painel', ['administrador', 'gerente', 'enfermeira', 'médico','tecnico'])->default('tecnico'); // Coloca a coluna após a coluna password
             $table->rememberToken();
+            $table->boolean('is_active')->default(false);
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 2048)->nullable();
             $table->timestamps();

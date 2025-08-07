@@ -3,7 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-
+use App\Models\Medicine;
+use App\Observers\MedicineObserver;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -14,11 +15,8 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        //
-    }
+  public function boot()
+{
+    Medicine::observe(MedicineObserver::class);
+}
 }

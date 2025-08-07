@@ -17,6 +17,16 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
-
-
+/*
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('stock:check-low')->daily();
+}
     
+
+/*
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('medicines:check')->dailyAt('08:00'); // Executa diariamente às 8h
+}
+*/

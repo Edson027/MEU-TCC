@@ -11,46 +11,38 @@ use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use App\UserType;
 use Spatie\Permission\Traits\HasRoles;
+
+
 class User extends Authenticatable
 {
     use HasApiTokens;
-
+ use HasFactory, Notifiable, HasRoles;
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory;
     use HasProfilePhoto;
-    use Notifiable;
+    
     use TwoFactorAuthenticatable;
-        /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
+
+protected $fillable = [
         'name',
         'email',
         'password',
-        'type',
-
+        'is_active',
+        'last_login_at',
+          'receives_notifications'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
-        'two_factor_recovery_codes',
-        'two_factor_secret',
     ];
 
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var array<int, string>
-     */
-    protected $appends = [
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'is_active' => 'boolean'
+    ];
+
+       protected $appends = [
         'profile_photo_url',
     ];
 
@@ -116,4 +108,32 @@ public function unreadNotifications()
 {
     return $this->notifications()->where('read', false);
 }
+
+ // Escopo para pesquisa
+    public function scopeSearch($query, $term)
+    {
+        $term = "%$term%";
+        $query->where(function($query) use ($term) {
+            $query->where('name', 'like', $term)
+                  ->orWhere('email', 'like', $term);
+        });
+    }
+
+    // Escopo para filtrar por status
+    public function scopeActive($query, $status)
+    {
+        if ($status !== null) {
+            return $query->where('is_active', $status);
+        }
+        return $query;
+    }
+
+    // Escopo para filtrar por função
+    public function scopeWithRole($query, $role)
+    {
+        if ($role) {
+            return $query->role($role);
+        }
+        return $query;
+    }
 }

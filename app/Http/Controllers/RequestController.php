@@ -18,7 +18,7 @@ class RequestController extends Controller
             ->paginate(15);
 
         return view('Pedidos.status', compact('requests'));
-    }
+    } 
 
      public function index2()
     {

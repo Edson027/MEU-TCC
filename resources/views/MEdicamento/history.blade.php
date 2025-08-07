@@ -1,130 +1,163 @@
-@extends('Template.app')
+@extends('layouts.admin')
 
 @section('title', 'Histórico: ' . $medicine->name)
 
+@push('styles')
+<style>
+    .history-card {
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    .history-card:hover {
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    .badge-entry {
+        background-color: #1cc88a;
+        color: white;
+    }
+    .badge-exit {
+        background-color: #e74a3b;
+        color: white;
+    }
+    .badge-pending {
+        background-color: #f6c23e;
+        color: #1f2d3d;
+    }
+    .badge-approved {
+        background-color: #1cc88a;
+        color: white;
+    }
+    .badge-partial {
+        background-color: #4e73df;
+        color: white;
+    }
+    .badge-rejected {
+        background-color: #e74a3b;
+        color: white;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="max-w-6xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Histórico Completo: {{ $medicine->name }}</h1>
-        <a href="{{ route('medicines.show', $medicine) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md">
-            <i class="fas fa-arrow-left mr-1"></i> Voltar
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-history"></i> Histórico Completo: {{ $medicine->name }}
+        </h1>
+        <a href="{{ route('medicines.show', $medicine) }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Voltar
         </a>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 bg-gray-100 border-b">
-            <h2 class="text-lg font-semibold text-gray-800">Movimentações de Estoque</h2>
+    <!-- Card de Movimentações -->
+    <div class="card shadow mb-4 history-card">
+        <div class="card-header py-3 bg-gray-100">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-exchange-alt"></i> Movimentações de Estoque
+            </h6>
         </div>
-
-        <div class="p-6">
+        <div class="card-body">
             @if($movements->isEmpty())
-                <p class="text-gray-500">Nenhuma movimentação registrada para este medicamento.</p>
+                <div class="text-center py-4">
+                    <i class="fas fa-box-open fa-3x text-gray-300 mb-3"></i>
+                    <p class="text-gray-500">Nenhuma movimentação registrada para este medicamento.</p>
+                </div>
             @else
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Responsável</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($movements as $movement)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $movement->movement_date->format('d/m/Y H:i') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    {{ $movement->type === 'entrada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                    {{ $movement->type === 'entrada' ? 'Entrada' : 'Saída' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $movement->quantity }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $movement->user->name }}
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
-                                {{ $movement->reason }}
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-                <div class="mt-4">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                                <th>Responsável</th>
+                                <th>Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($movements as $movement)
+                            <tr>
+                                <td>{{ $movement->movement_date->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    <span class="badge {{ $movement->type === 'entrada' ? 'badge-entry' : 'badge-exit' }}">
+                                        {{ $movement->type === 'entrada' ? 'Entrada' : 'Saída' }}
+                                    </span>
+                                </td>
+                                <td>{{ $movement->quantity }}</td>
+                                <td>{{ $movement->user->name }}</td>
+                                <td>{{ $movement->reason }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-center mt-3">
                     {{ $movements->links() }}
                 </div>
             @endif
         </div>
     </div>
 
-    <div class="mt-6 bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 bg-gray-100 border-b">
-            <h2 class="text-lg font-semibold text-gray-800">Solicitações</h2>
+    <!-- Card de Solicitações -->
+    <div class="card shadow mb-4 history-card">
+        <div class="card-header py-3 bg-gray-100">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-clipboard-list"></i> Solicitações
+            </h6>
         </div>
-
-        <div class="p-6">
+        <div class="card-body">
             @if($requests->isEmpty())
-                <p class="text-gray-500">Nenhuma solicitação registrada para este medicamento.</p>
+                <div class="text-center py-4">
+                    <i class="fas fa-clipboard fa-3x text-gray-300 mb-3"></i>
+                    <p class="text-gray-500">Nenhuma solicitação registrada para este medicamento.</p>
+                </div>
             @else
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resposta</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($requests as $request)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $request->created_at->format('d/m/Y H:i') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $request->user->name }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $request->quantity }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if($request->status === 'pending')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                        Pendente
-                                    </span>
-                                @elseif($request->status === 'approved')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                        Aprovado
-                                    </span>
-                                @elseif($request->status === 'partial')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                        Parcial
-                                    </span>
-                                @else
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        Rejeitado
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
-                                {{ $request->response ?? '-' }}
-                                @if($request->responded_by)
-                                    <div class="text-xs text-gray-400">por {{ $request->responder->name }}</div>
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-                <div class="mt-4">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Solicitante</th>
+                                <th>Quantidade</th>
+                                <th>Status</th>
+                                <th>Resposta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($requests as $request)
+                            <tr>
+                                <td>{{ $request->created_at->format('d/m/Y H:i') }}</td>
+                                <td>{{ $request->user->name }}</td>
+                                <td>{{ $request->quantity }}</td>
+                                <td>
+                                    @if($request->status === 'pending')
+                                        <span class="badge badge-pending">Pendente</span>
+                                    @elseif($request->status === 'approved')
+                                        <span class="badge badge-approved">Aprovado</span>
+                                    @elseif($request->status === 'partial')
+                                        <span class="badge badge-partial">Parcial</span>
+                                    @else
+                                        <span class="badge badge-rejected">Rejeitado</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    {{ $request->response ?? '-' }}
+                                    @if($request->responded_by)
+                                        <div class="text-xs text-muted">por {{ $request->responder->name }}</div>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-center mt-3">
                     {{ $requests->links() }}
                 </div>
             @endif
