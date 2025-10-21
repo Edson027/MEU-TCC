@@ -15,6 +15,7 @@ return new class extends Migration
                  $table->id();
     $table->string('name');
     $table->text('description')->nullable();
+    $table->foreignId('fornecedor_id')->constrained();
     $table->string('batch')->nullable();
     $table->date('expiration_date');
     $table->integer('stock')->default(0);

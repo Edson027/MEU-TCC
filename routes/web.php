@@ -1,16 +1,20 @@
 <?php
 
+use App\Http\Controllers\FornecedorController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\MovementController;
+use App\Http\Controllers\MovimentarEstoque;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RestockOrderController;
 use App\Http\Controllers\StockAlertController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\UsuarioController;
 use App\Models\Medicine;
+use App\Http\Controllers\SupplyOrderController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -118,12 +122,6 @@ Route::get('/reports/requests', [ReportController::class, 'requestsReport'])->na
     Route::post('/requests/{request}/reject', [RequestController::class, 'reject'])
         ->name('requests.reject');
 //        ->middleware('can:approve,request');
-//rotas do crud de  usuários
-Route::get('/Usuarios/create',[UsuarioController::class,'create'])->name('users.create');
-Route::get('/Usuarios/index',[UsuarioController::class,'index'])->name('users.index');
-Route::post('/Usuarios/store',[UsuarioController::class,'store'])->name('users.store');
-Route::get('/Usuarios/export',[UsuarioController::class,'export'])->name('users.export');
-Route::resource('users', UsuarioController::class);
 
 
 Route::put('requests/{request}', [RequestController::class, 'update'])->name('requests.update');
@@ -154,10 +152,6 @@ Route::get('/Usuarios',[UsuarioController::class,'create'])->name('users.create'
 Route::get('/medicines/out-of-stock', [MedicineController::class, 'outOfStock'])->name('medicines.outOfStock');
 
 
-Route::resource('users', 'UsuarioController')->except(['show']);
-    Route::put('users/{user}/change-password', 'UsuarioController@changePassword')->name('users.change-password');
-    Route::get('users/export', 'UsuarioController@export')->name('users.export');
-    Route::post('users/batch-update', 'UsuarioController@batchUpdate')->name('users.batch-update');
 
  
   //  Route::middleware(['auth', 'can:view_stock_alerts'])->group(function() {
@@ -226,3 +220,82 @@ Route::get('/stock/check-low', function() {
     Route::post('/restock-orders/store', [RestockOrderController::class, 'store'])->name('restock-orders.store');
     Route::post('/restock-orders/{order}/approve', [RestockOrderController::class, 'approve'])->name('restock-orders.approve');
     Route::post('/restock-orders/{order}/reject', [RestockOrderController::class, 'reject'])->name('restock-orders.reject');
+
+    // Rotas para usuários
+Route::resource('users', UserController::class);
+
+
+
+// Rotas para Fornecedores
+//Route::prefix('fornecedores')->name('fornecedors.')->group(function () {
+    
+    // Listagem de fornecedores
+    Route::get('/fornecedores/index', [FornecedorController::class, 'index'])
+         ->name('index')
+         ;
+    
+    // Formulário de criação
+    Route::get('/fornecedores/create', [FornecedorController::class, 'create'])
+         ->name('create')
+         ;
+    
+    // Salvar novo fornecedor
+    Route::post('/fornecedores/salvar', [FornecedorController::class, 'store'])
+         ->name('store')
+         ;
+    
+    // Visualizar fornecedor
+    Route::get('/fornecedores/{fornecedor}', [FornecedorController::class, 'show'])
+         ->name('show')
+         ;
+    
+    // Formulário de edição
+    Route::get('/fornecedores/{fornecedor}/edit', [FornecedorController::class, 'edit'])
+         ->name('edit')
+         ;
+    
+    // Atualizar fornecedor
+    Route::put('/fornecedores/{fornecedor}', [FornecedorController::class, 'update'])
+         ->name('update')
+         ;
+    
+    // Excluir fornecedor
+    Route::delete('/fornecedores/{fornecedor}', [FornecedorController::class, 'destroy'])
+         ->name('destroy')
+         ;
+    
+    // API para select2
+    Route::get('/api/fornecedores', [FornecedorController::class, 'apiFornecedores'])
+         ->name('api.fornecedores')
+         ;
+//});
+
+// Rota alternativa para compatibilidade
+Route::resource('fornecedors', FornecedorController::class)
+     ->parameters(['fornecedors' => 'fornecedor'])
+     ->middleware(['auth']);
+ 
+
+     Route::resource('supply-orders', SupplyOrderController::class);
+     //Route::get('/supply-orders/index',[ SupplyOrderController::class,'index'])->name('supply-orders.index');
+
+Route::post('/supply-orders/{supplyOrder}/approve', [SupplyOrderController::class, 'approve'])
+    ->name('supply-orders.approve');
+
+Route::post('/supply-orders/{supplyOrder}/reject', [SupplyOrderController::class, 'reject'])
+    ->name('supply-orders.reject');
+
+Route::post('/supply-orders/{supplyOrder}/receive', [SupplyOrderController::class, 'receive'])
+    ->name('supply-orders.receive');
+
+Route::post('/supply-orders/generate-auto', [SupplyOrderController::class, 'generateAutoOrders'])
+    ->name('supply-orders.generate-auto');
+
+
+    Route::get('movements', [MovimentarEstoque::class, 'index'])->name('movements.index');
+Route::get('movements/export', [MovimentarEstoque::class, 'export'])->name('movements.export');
+Route::get('movements/{movement}', [MovimentarEstoque::class, 'show'])->name('movements.show');
+
+// Rotas específicas para criar movimentações a partir de um medicamento
+Route::get('medicines/{medicine}/movements/create/{type}', [MovimentarEstoque::class, 'create'])->name('movements.create');
+Route::post('medicines/{medicine}/movements', [MovimentarEstoque::class, 'store'])->name('movements.store');

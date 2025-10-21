@@ -29,4 +29,8 @@ protected function schedule(Schedule $schedule)
 {
     $schedule->command('medicines:check')->dailyAt('08:00'); // Executa diariamente às 8h
 }
-*/
+
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('stock:check')->daily(); // Verifica diariamente
+}*/

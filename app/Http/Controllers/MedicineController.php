@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Models\Fornecedor;
 use App\Models\Medicine;
 use App\Models\Movement;
 use App\Models\User;
@@ -19,8 +19,8 @@ class MedicineController extends Controller
 
  public function index(Request $request)
     {
-        $query = Medicine::query();
-
+        //$query = Medicine::query();
+$query = Medicine::query()->with('fornecedor'); 
         // Filtros
         if ($request->filled('search')) {
             $query->where('name', 'like', '%'.$request->search.'%')
@@ -53,14 +53,26 @@ class MedicineController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+                    $summary = [
+            'total_medicines' => Medicine::count(),
+            'low_stock' => Medicine::whereColumn('stock', '<', 'minimum_stock')->count(),
+            'expiring_soon' => Medicine::where('expiration_date', '<=', now()->addDays(30))->count(),
+            'total_users' => User::count(),
+           'expired_medicines' => Medicine::where('expiration_date', '<', now())->count(),
+              'roles'=>Role::All()
+          //  'completed_prescriptions' => Prescription::where('status', 'completed')->count()
+        ];
+
         $categories = Medicine::distinct('category')->pluck('category');
 
-        return view('MEdicamento.index', compact('medicines', 'categories'));
+
+        return view('MEdicamento.index', compact('medicines', 'categories','summary'));
     }
 
     public function create()
     {
-        return view('MEdicamento.create');
+          $fornecedor=Fornecedor::all();
+        return view('MEdicamento.create', compact('fornecedor'));
     }
 
     public function store(Request $request)
@@ -74,7 +86,8 @@ class MedicineController extends Controller
             'expiration_date' => 'required|date|after_or_equal:today',
          
             'category' => 'required|max:100',
-            'minimum_stock' => 'required|integer|min:1'
+            'minimum_stock' => 'required|integer|min:1',
+              'fornecedor_id' => 'required|integer|exists:fornecedors,id'
         ],
         [
             'expiration_date.agora_ou_depois'=>'Avalidade deve ser de hoje ou de uma data futura!',
@@ -82,9 +95,8 @@ class MedicineController extends Controller
 
 
 
-        ]);
-
-        
+        ],);
+   //dd($request->all()); // Para testar se está chegando
    $medicine = Medicine::create($request->all());
 
         // Registrar entrada inicial
@@ -124,11 +136,21 @@ class MedicineController extends Controller
 
     public function show(Medicine $medicine)
     {
+  /*      
         $movements = $medicine->movements()
             ->with(['user', 'request'])
             ->latest()
             ->paginate(10);
+*/
 
+$movements = $medicine->movements()
+    ->with([
+        'user:id,name',
+        'request:id,code',
+        'medicine.fornecedor:id,nome' // Agora deve funcionar
+    ])
+    ->latest()
+    ->paginate(10);
         return view('MEdicamento.show', compact('medicine', 'movements'));
     }
 
@@ -283,6 +305,26 @@ class MedicineController extends Controller
             ]);
         }
     }
+
+    public function VerificarEstadoP()
+{
+    $critical_stock = Medicine::where('stock', '>', 0)
+        ->whereColumn('stock', '<', 'minimum_stock')
+        ->get();
+    
+    $expiring_soon = Medicine::where('expiration_date', '<=', now()->addDays(45))
+        ->where('expiration_date', '>', now())
+        ->get();
+    
+    $zero_stock = Medicine::where('stock', 0)->get();
+    
+    return response()->json([
+        'critical_stock' => $critical_stock,
+        'expiring_soon' => $expiring_soon,
+        'zero_stock' => $zero_stock
+    ]);
+}
+
     
 public function notifications2()
 {
@@ -558,6 +600,8 @@ public function clearNotifications()
     
     return back()->with('success', 'Todas as notificações foram removidas');
 }
+
+
 
 
  public function administrador()

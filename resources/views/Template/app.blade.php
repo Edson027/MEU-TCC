@@ -75,17 +75,16 @@
                         <div class="absolute bottom-0 left-0 w-full h-1 bg-green-500 rounded-t"></div>
                         @endif
                     </div>
-                    
-                    <!-- Pedidos -->
-                    <div class="relative group ml-4">
-                        <a href="{{ route('requests.index') }}" 
-                           class="{{ request()->routeIs('requests.*') ? 'border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-4 pt-1 border-b-2 text-sm font-medium transition-colors duration-200">
-                            Pedidos
-                        </a>
-                        @if(request()->routeIs('requests.*'))
-                        <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 rounded-t"></div>
-                        @endif
-                    </div>
+                    <!-- Usuários -->
+<div class="relative group ml-4">
+    <a href="{{ route('users.index') }}" 
+       class="{{ request()->routeIs('users.*') ? 'border-orange-500 text-orange-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-4 pt-1 border-b-2 text-sm font-medium transition-colors duration-200">
+        Usuários
+    </a>
+    @if(request()->routeIs('users.*'))
+    <div class="absolute bottom-0 left-0 w-full h-1 bg-orange-500 rounded-t"></div>
+    @endif
+</div>
                     
                     <!-- Relatórios -->
                     <div class="relative group ml-4">

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Http\Controllers\MedicineController;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class Medicine extends Model
 {
  use HasFactory;
@@ -18,7 +20,8 @@ use SoftDeletes;
         'stock',
         'price',
         'category',
-        'minimum_stock'
+        'minimum_stock',
+          'fornecedor_id',
     ];
  protected $date = ['deleted_at'];
     protected $dates = ['expiration_date'];
@@ -99,6 +102,38 @@ public function getStockLevelAttribute()
     {
         return $this->hasMany(RestockOrder::class);
     }
+ public function fornecedor(): BelongsTo
+    {
+        return $this->belongsTo(Fornecedor::class);
+    }
+    // Adicione este relacionamento
+    public function supplyOrders()
+    {
+        return $this->hasMany(SupplyOrder::class);
+    }
+
+    // Métodos auxiliares para verificação de estoque
+    public function isLowStock()
+    {
+        return $this->stock <= $this->minimum_stock;
+    }
+
+    public function isOutOfStock()
+    {
+        return $this->stock == 0;
+    }
+
+    public function needsRestock2()
+    {
+        return $this->isLowStock() || $this->isOutOfStock();
+    }
+
+    public function hasPendingOrders()
+    {
+        return $this->supplyOrders()
+            ->whereIn('status', ['pending', 'approved'])
+            ->exists();
+    }
 
     /**
  * The "booted" method of the model.
@@ -125,6 +160,7 @@ protected static function booted()
         }
     });
 }
+
 
 public function checkStockLevels()
 {

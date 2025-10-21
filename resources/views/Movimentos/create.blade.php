@@ -65,7 +65,8 @@
                         <div class="form-group">
                             <label for="quantity">Quantidade *</label>
                             <input type="number" id="quantity" name="quantity" min="1" 
-                                   class="form-control {{ $errors->has('quantity') ? 'is-invalid' : '' }}" required>
+                                   class="form-control {{ $errors->has('quantity') ? 'is-invalid' : '' }}" 
+                                   value="{{ old('quantity') }}" required>
                             @error('quantity')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -73,7 +74,7 @@
 
                         <div class="form-group">
                             <label for="movement_date">Data da Movimentação *</label>
-                            <input type="datetime-local" id="movement_date" name="movement_date" readonly 
+                            <input type="datetime-local" id="movement_date" name="movement_date"
                                    value="{{ old('movement_date', now()->format('Y-m-d\TH:i')) }}"
                                    class="form-control {{ $errors->has('movement_date') ? 'is-invalid' : '' }}" required>
                             @error('movement_date')
@@ -84,7 +85,8 @@
                         <div class="form-group">
                             <label for="reason">Motivo *</label>
                             <textarea id="reason" name="reason" rows="3"
-                                      class="form-control {{ $errors->has('reason') ? 'is-invalid' : '' }}" required></textarea>
+                                      class="form-control {{ $errors->has('reason') ? 'is-invalid' : '' }}" 
+                                      placeholder="Descreva o motivo da movimentação..." required>{{ old('reason') }}</textarea>
                             @error('reason')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
